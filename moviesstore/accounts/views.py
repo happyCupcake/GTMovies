@@ -3,10 +3,11 @@ from django.contrib.auth.forms import UserCreationForm
 from django.shortcuts import redirect
 
 from cart.models import Order
-from .forms import CustomUserCreationForm, CustomErrorList
-from django.contrib.auth import login as auth_login, authenticate, logout as auth_logout
+from .forms import CustomUserCreationForm, CustomErrorList, CustomPasswordResetForm
+from django.contrib.auth import login as auth_login, authenticate, logout as auth_logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
+from django.contrib import messages
 from django.contrib.auth.models import User
 # Create your views here.
 def signup(request):
@@ -47,3 +48,30 @@ def orders(request):
     template_data['title'] = 'Orders'
     template_data['orders'] = request.user.order_set.all()
     return render(request, 'accounts/orders.html', {'template_data': template_data})
+
+@login_required
+def password_reset(request):
+    print("Password reset view reached!")
+    if request.method == "POST":
+        form = CustomPasswordResetForm(request.POST)
+        if form.is_valid():
+            current_password = form.cleaned_data['current_password']
+            new_password = form.cleaned_data['new_password']
+
+            # Authenticate user using the current password
+            user = authenticate(username=request.user.username, password=current_password)
+            if user is not None:
+                user.set_password(new_password)
+                user.save()
+                update_session_auth_hash(request, user)  # Keep the user logged in after password change
+                messages.success(request, "Your password has been updated.")
+                return redirect('accounts.password_reset_done')  # Redirect to success page
+            else:
+                form.add_error('current_password', 'The current password is incorrect.')
+    else:
+        form = CustomPasswordResetForm()
+
+    return render(request, 'accounts/password_reset.html', {'form': form})
+
+def password_reset_done(request):
+    return render(request, 'accounts/password_reset_done.html')
