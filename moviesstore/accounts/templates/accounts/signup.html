@@ -10,10 +10,19 @@
             <hr />
             <form method="POST">
               {% csrf_token %}
+              <!-- Render the form as paragraphs (including email field) -->
               {{ template_data.form.as_p }}
-              <button type="submit"
-                class="btn bg-dark text-white">Sign Up
-              </button>
+
+              <!-- Optionally add error handling for email specifically -->
+              {% if template_data.form.email.errors %}
+                <div class="alert alert-danger">
+                  {% for error in template_data.form.email.errors %}
+                    <p>{{ error }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+
+              <button type="submit" class="btn bg-dark text-white">Sign Up</button>
             </form>
           </div>
         </div>
